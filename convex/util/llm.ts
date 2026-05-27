@@ -213,28 +213,33 @@ export async function fetchEmbeddingBatch(texts: string[]) {
       ),
     };
   }
+  // If using a custom provider (e.g. Xiaomi without /v1/embeddings),
+  // mock embeddings locally to avoid network 404s. This returns an
+  // embedding array of length `EMBEDDING_DIMENSION` filled with zeros
+  // for each input text, matching the original return shape.
+  if (config.provider === 'custom') {
+    const mockEmbeddings = texts.map(() => new Array(EMBEDDING_DIMENSION).fill(0));
+    return {
+      ollama: false as const,
+      embeddings: mockEmbeddings,
+      usage: 0,
+      retries: 0,
+      ms: 0,
+    };
+  }
+
   const {
     result: json,
     retries,
     ms,
   } = await retryWithBackoff(async () => {
     // Default to provider URL
-    let url = config.url + '/v1/embeddings';
+    const url = config.url + '/v1/embeddings';
     // Default headers use AuthHeaders
-    let headers: Record<string, string> = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...AuthHeaders(),
     };
-
-    // Intercept custom provider and redirect to SiliconFlow to avoid
-    // providers that lack /v1/embeddings endpoint (e.g., Xiaomi).
-    if (config.provider === 'custom') {
-      url = 'https://api.siliconflow.cn/v1/embeddings';
-      headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + process.env.SILICONFLOW_API_KEY,
-      };
-    }
 
     const result = await fetch(url, {
       method: 'POST',
