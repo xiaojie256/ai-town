@@ -8,16 +8,26 @@ export default function Button(props: {
   onClick?: MouseEventHandler;
   title?: string;
   children: ReactNode;
+  disabled?: boolean;
 }) {
+  const handleClick: MouseEventHandler = (event) => {
+    if (props.disabled) {
+      event.preventDefault();
+      return;
+    }
+    props.onClick?.(event);
+  };
+
   return (
     <a
       className={clsx(
         'button text-white shadow-solid text-xl pointer-events-auto',
         props.className,
+        props.disabled && 'opacity-50 cursor-not-allowed',
       )}
       href={props.href}
       title={props.title}
-      onClick={props.onClick}
+      onClick={handleClick}
     >
       <div className="inline-block bg-clay-700">
         <span>

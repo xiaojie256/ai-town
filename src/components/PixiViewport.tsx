@@ -47,7 +47,6 @@ export default PixiComponent('Viewport', {
   applyProps(viewport, oldProps: any, newProps: any) {
     Object.keys(newProps).forEach((p) => {
       if (p !== 'app' && p !== 'viewportRef' && p !== 'children' && oldProps[p] !== newProps[p]) {
-        // @ts-expect-error Ignoring TypeScript here
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         viewport[p] = newProps[p];
       }
