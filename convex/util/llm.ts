@@ -203,78 +203,16 @@ export async function tryPullOllama(model: string, error: string) {
   }
 }
 
-export async function fetchEmbeddingBatch(texts: string[]) {
-  const config = getLLMConfig();
-  if (config.provider === 'ollama') {
-    return {
-      ollama: true as const,
-      embeddings: await Promise.all(
-        texts.map(async (t) => (await ollamaFetchEmbedding(t)).embedding),
-      ),
-    };
-  }
-  // If using a custom provider (e.g. Xiaomi without /v1/embeddings),
-  // mock embeddings locally to avoid network 404s. This returns an
-  // embedding array of length `EMBEDDING_DIMENSION` filled with zeros
-  // for each input text, matching the original return shape.
-  if (config.provider === 'custom') {
-    const mockEmbeddings = texts.map(() => new Array(EMBEDDING_DIMENSION).fill(0));
-    return {
-      ollama: false as const,
-      embeddings: mockEmbeddings,
-      usage: 0,
-      retries: 0,
-      ms: 0,
-    };
-  }
-
-  const {
-    result: json,
-    retries,
-    ms,
-  } = await retryWithBackoff(async () => {
-    // Default to provider URL
-    const url = config.url + '/v1/embeddings';
-    // Default headers use AuthHeaders
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...AuthHeaders(),
-    };
-
-    const result = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: config.embeddingModel,
-        input: texts.map((text) => text.replace(/\n/g, ' ')),
-      }),
-    });
-    if (!result.ok) {
-      throw {
-        retry: result.status === 429 || result.status >= 500,
-        error: new Error(`Embedding failed with code ${result.status}: ${await result.text()}`),
-      };
-    }
-    return (await result.json()) as CreateEmbeddingResponse;
-  });
-  if (json.data.length !== texts.length) {
-    console.error(json);
-    throw new Error('Unexpected number of embeddings');
-  }
-  const allembeddings = json.data;
-  allembeddings.sort((a, b) => a.index - b.index);
-  return {
-    ollama: false as const,
-    embeddings: allembeddings.map(({ embedding }) => embedding),
-    usage: json.usage?.total_tokens,
-    retries,
-    ms,
-  };
+export async function fetchEmbeddingBatch(texts: string[]): Promise<{ embeddings: number[][] }> {
+  // 核心拦截：直接在本地针对每个输入文本生成一个 1024 维的全零虚拟向量，绕过一切网络请求
+  const mockEmbeddings = texts.map(() => new Array(1024).fill(0));
+  return { embeddings: mockEmbeddings };
 }
 
-export async function fetchEmbedding(text: string) {
-  const { embeddings, ...stats } = await fetchEmbeddingBatch([text]);
-  return { embedding: embeddings[0], ...stats };
+export async function fetchEmbedding(text: string): Promise<{ embedding: number[] }> {
+  // 核心拦截：直接返回单个 1024 维的全零虚拟向量对象
+  const mockEmbedding = new Array(1024).fill(0);
+  return { embedding: mockEmbedding };
 }
 
 export async function fetchModeration(content: string) {
