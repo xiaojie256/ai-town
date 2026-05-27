@@ -26,5 +26,5 @@
     "types": ["node"]
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.js", "postcss.config.js"],
-  "exclude": ["node_modules", "**/*.test.ts"]
+  "exclude": ["node_modules", "**/*.test.ts", "convex/**/*.test.ts"]
 }
