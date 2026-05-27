@@ -1,9 +1,10 @@
 import { v } from 'convex/values';
-import { ActionCtx, internalMutation, internalQuery } from '../_generated/server';
-import { internal } from '../_generated/api';
-import { Id } from '../_generated/dataModel';
-import { fetchEmbeddingBatch } from '../util/llm';
+import { ActionCtx, internalMutation, internalQuery, QueryCtx, MutationCtx } from '../_generated/server.js';
+import { internal } from '../_generated/api.js';
+import { Id } from '../_generated/dataModel.js';
+import { fetchEmbeddingBatch } from '../util/llm.js';
 
+// @ts-expect-error - Convex generated types cause deep recursion
 const selfInternal = internal.agent.embeddingsCache;
 
 export async function fetch(ctx: ActionCtx, text: string) {
@@ -51,27 +52,26 @@ export async function fetchBatch(ctx: ActionCtx, texts: string[]) {
   };
 }
 
-async function hashText(text: string) {
+async function hashText(text: string): Promise<Uint8Array> {
   const textEncoder = new TextEncoder();
   const buf = textEncoder.encode(text);
   if (typeof crypto === 'undefined') {
-    // Ugly, ugly hax to get ESBuild to not try to bundle this node dependency.
     const f = () => 'node:crypto';
     const crypto = (await import(f())) as typeof import('crypto');
     const hash = crypto.createHash('sha256');
     hash.update(buf);
-    return hash.digest().buffer;
+    return new Uint8Array(hash.digest());
   } else {
-    return await crypto.subtle.digest('SHA-256', buf);
+    return new Uint8Array(await crypto.subtle.digest('SHA-256', buf));
   }
 }
 
 export const getEmbeddingsByText = internalQuery({
   args: { textHashes: v.array(v.bytes()) },
   handler: async (
-    ctx,
-    args,
-  ): Promise<{ index: number; embeddingId: Id<'embeddingsCache'>; embedding: number[] }[]> => {
+    ctx: QueryCtx,
+    args: { textHashes: Uint8Array[] },
+  ) => {
     const out = [];
     for (let i = 0; i < args.textHashes.length; i++) {
       const textHash = args.textHashes[i];
@@ -100,7 +100,7 @@ export const writeEmbeddings = internalMutation({
       }),
     ),
   },
-  handler: async (ctx, args): Promise<Id<'embeddingsCache'>[]> => {
+  handler: async (ctx: MutationCtx, args: { embeddings: { textHash: Uint8Array; embedding: number[] }[] }) => {
     const ids = [];
     for (const embedding of args.embeddings) {
       ids.push(await ctx.db.insert('embeddingsCache', embedding));
