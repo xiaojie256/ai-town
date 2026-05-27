@@ -204,14 +204,18 @@ export async function tryPullOllama(model: string, error: string) {
 }
 
 export async function fetchEmbeddingBatch(texts: string[]): Promise<{ embeddings: number[][] }> {
-  // 核心拦截：直接在本地针对每个输入文本生成一个 1024 维的全零虚拟向量，绕过一切网络请求
-  const mockEmbeddings = texts.map(() => new Array(1024).fill(0));
+  // 生成 [1, 0, 0, ...] 的单位向量，既不消耗Token，又能完美通过云端数据库的余弦相似度计算
+  const mockEmbeddings = texts.map(() => {
+    const vec = new Array(1024).fill(0);
+    vec[0] = 1;
+    return vec;
+  });
   return { embeddings: mockEmbeddings };
 }
 
 export async function fetchEmbedding(text: string): Promise<{ embedding: number[] }> {
-  // 核心拦截：直接返回单个 1024 维的全零虚拟向量对象
   const mockEmbedding = new Array(1024).fill(0);
+  mockEmbedding[0] = 1;
   return { embedding: mockEmbedding };
 }
 
