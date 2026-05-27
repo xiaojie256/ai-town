@@ -1,10 +1,15 @@
 import { v } from 'convex/values';
-import { ActionCtx, internalMutation, internalQuery, QueryCtx, MutationCtx } from '../_generated/server.js';
+import {
+  ActionCtx,
+  internalMutation,
+  internalQuery,
+  QueryCtx,
+  MutationCtx,
+} from '../_generated/server.js';
 import { internal } from '../_generated/api.js';
 import { Id } from '../_generated/dataModel.js';
 import { fetchEmbeddingBatch } from '../util/llm.js';
 
-// @ts-expect-error - Convex generated types cause deep recursion
 const selfInternal = internal.agent.embeddingsCache;
 
 export async function fetch(ctx: ActionCtx, text: string) {
@@ -52,33 +57,35 @@ export async function fetchBatch(ctx: ActionCtx, texts: string[]) {
   };
 }
 
-async function hashText(text: string): Promise<Uint8Array> {
+async function hashText(text: string): Promise<ArrayBuffer> {
   const textEncoder = new TextEncoder();
   const buf = textEncoder.encode(text);
   if (typeof crypto === 'undefined') {
     const f = () => 'node:crypto';
-    const crypto = (await import(f())) as typeof import('crypto');
-    const hash = crypto.createHash('sha256');
+    const nodeCrypto = (await import(f())) as typeof import('crypto');
+    const hash = nodeCrypto.createHash('sha256');
     hash.update(buf);
-    return new Uint8Array(hash.digest());
+    const digest = hash.digest();
+    return new Uint8Array(digest).slice().buffer;
   } else {
-    return new Uint8Array(await crypto.subtle.digest('SHA-256', buf));
+    return await crypto.subtle.digest('SHA-256', buf);
   }
 }
 
 export const getEmbeddingsByText = internalQuery({
   args: { textHashes: v.array(v.bytes()) },
-  handler: async (
-    ctx: QueryCtx,
-    args: { textHashes: Uint8Array[] },
-  ) => {
+  handler: async (ctx: QueryCtx, args: { textHashes: ArrayBuffer[] }) => {
+    const results = await Promise.all(
+      args.textHashes.map((textHash) =>
+        ctx.db
+          .query('embeddingsCache')
+          .withIndex('text', (q) => q.eq('textHash', textHash))
+          .first(),
+      ),
+    );
     const out = [];
-    for (let i = 0; i < args.textHashes.length; i++) {
-      const textHash = args.textHashes[i];
-      const result = await ctx.db
-        .query('embeddingsCache')
-        .withIndex('text', (q) => q.eq('textHash', textHash))
-        .first();
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
       if (result) {
         out.push({
           index: i,
@@ -100,7 +107,10 @@ export const writeEmbeddings = internalMutation({
       }),
     ),
   },
-  handler: async (ctx: MutationCtx, args: { embeddings: { textHash: Uint8Array; embedding: number[] }[] }) => {
+  handler: async (
+    ctx: MutationCtx,
+    args: { embeddings: { textHash: ArrayBuffer; embedding: number[] }[] },
+  ) => {
     const ids = [];
     for (const embedding of args.embeddings) {
       ids.push(await ctx.db.insert('embeddingsCache', embedding));
