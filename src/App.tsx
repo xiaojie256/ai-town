@@ -3,7 +3,6 @@ import Game from './components/Game.tsx';
 import { ToastContainer } from 'react-toastify';
 import a16zImg from '../assets/a16z.png';
 import convexImg from '../assets/convex.svg';
-import starImg from '../assets/star.svg';
 import helpImg from '../assets/help.svg';
 // import { UserButton } from '@clerk/clerk-react';
 // import { Authenticated, Unauthenticated } from 'convex/react';
@@ -92,9 +91,6 @@ export default function Home() {
           <div className="flex gap-4 flex-grow pointer-events-none">
             <FreezeButton />
             <MusicButton />
-            <Button href="https://github.com/a16z-infra/ai-town" imgUrl={starImg}>
-              Star
-            </Button>
             <InteractButton />
             <Button imgUrl={helpImg} onClick={() => setHelpModalOpen(true)}>
               Help

@@ -96,15 +96,17 @@ export async function chatCompletion(
     retries,
     ms,
   } = await retryWithBackoff(async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     const result = await fetch(config.url + '/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...AuthHeaders(),
       },
-
       body: JSON.stringify(body),
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
     if (!result.ok) {
       const error = await result.text();
       console.error({ error });
