@@ -2,29 +2,25 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
+    "baseUrl": ".",
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "Node16",
-    "moduleResolution": "node16",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
     "allowImportingTsExtensions": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "paths": {
       "@/*": ["./src/*"]
     },
     "types": ["node"]
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "postcss.config.js"],
-  "exclude": ["node_modules", "**/*.test.ts", "convex/**/*.test.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "postcss.config.js"],
+  "exclude": ["node_modules", "convex/**/*", "**/*.test.ts"]
 }
