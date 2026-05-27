@@ -218,13 +218,27 @@ export async function fetchEmbeddingBatch(texts: string[]) {
     retries,
     ms,
   } = await retryWithBackoff(async () => {
-    const result = await fetch(config.url + '/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...AuthHeaders(),
-      },
+    // Default to provider URL
+    let url = config.url + '/v1/embeddings';
+    // Default headers use AuthHeaders
+    let headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...AuthHeaders(),
+    };
 
+    // Intercept custom provider and redirect to SiliconFlow to avoid
+    // providers that lack /v1/embeddings endpoint (e.g., Xiaomi).
+    if (config.provider === 'custom') {
+      url = 'https://api.siliconflow.cn/v1/embeddings';
+      headers = {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + process.env.SILICONFLOW_API_KEY,
+      };
+    }
+
+    const result = await fetch(url, {
+      method: 'POST',
+      headers,
       body: JSON.stringify({
         model: config.embeddingModel,
         input: texts.map((text) => text.replace(/\n/g, ' ')),
