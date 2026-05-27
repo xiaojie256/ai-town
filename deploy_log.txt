@@ -1,0 +1,8 @@
+
+ ⛅️ wrangler 4.86.0 (update available 4.95.0)
+─────────────────────────────────────────────
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mENOENT: no such file or directory, scandir 'E:\作业文件\仓库\ai-town\dist'[0m
+
+
+🪵  Logs were written to "C:\Users\FXD\AppData\Roaming\xdg.config\.wrangler\logs\wrangler-2026-05-27_14-50-46_121.log"
