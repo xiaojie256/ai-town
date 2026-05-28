@@ -168,6 +168,50 @@ export const randomPositions = internalMutation({
   },
 });
 
+// Fix stale /ai-town/ prefixed asset paths stored in the maps table from initial seeding.
+export const fixMapPaths = mutation({
+  handler: async (ctx) => {
+    const maps = await ctx.db.query('maps').collect();
+    let fixed = 0;
+    for (const map of maps) {
+      if (map.tileSetUrl.includes('/ai-town/')) {
+        await ctx.db.patch(map._id, {
+          tileSetUrl: map.tileSetUrl.replace('/ai-town/', '/'),
+        });
+        fixed++;
+      }
+    }
+    console.log(`Fixed ${fixed} map(s) with stale /ai-town/ path.`);
+    return { fixed };
+  },
+});
+
+// Unstick agents that have a permanently stuck inProgressOperation (e.g. from LLM errors).
+export const unstickAgents = mutation({
+  handler: async (ctx) => {
+    const { worldStatus } = await getDefaultWorld(ctx.db);
+    const world = await ctx.db.get(worldStatus.worldId);
+    if (!world) throw new Error('No world found');
+    const now = Date.now();
+    let unstuck = 0;
+    for (const agent of world.agents) {
+      if (agent.inProgressOperation) {
+        unstuck++;
+      }
+    }
+    const patchedAgents = world.agents.map((agent) => {
+      if (agent.inProgressOperation) {
+        const { inProgressOperation: _, ...rest } = agent;
+        return rest;
+      }
+      return agent;
+    });
+    await ctx.db.patch(worldStatus.worldId, { agents: patchedAgents });
+    console.log(`Unstuck ${unstuck} agent(s).`);
+    return { unstuck };
+  },
+});
+
 export const testEmbedding = internalAction({
   args: { input: v.string() },
   handler: async (_ctx, args) => {

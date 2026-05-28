@@ -1,5 +1,4 @@
-export const ACTION_TIMEOUT = 120_000; // more time for local dev
-// export const ACTION_TIMEOUT = 60_000;// normally fine
+export const ACTION_TIMEOUT = 60_000;
 
 export const IDLE_WORLD_TIMEOUT = 5 * 60 * 1000;
 export const WORLD_HEARTBEAT_INTERVAL = 60 * 1000;
@@ -34,12 +33,10 @@ export const INVITE_ACCEPT_PROBABILITY = 0.8;
 export const INVITE_TIMEOUT = 60000;
 
 // Wait for another player to say something before jumping in.
-export const AWKWARD_CONVERSATION_TIMEOUT = 60_000; // more time locally
-// export const AWKWARD_CONVERSATION_TIMEOUT = 20_000;
+export const AWKWARD_CONVERSATION_TIMEOUT = 20_000;
 
 // Leave a conversation after participating too long.
-export const MAX_CONVERSATION_DURATION = 10 * 60_000; // more time locally
-// export const MAX_CONVERSATION_DURATION = 2 * 60_000;
+export const MAX_CONVERSATION_DURATION = 3 * 60_000;
 
 // Leave a conversation if it has more than 8 messages;
 export const MAX_CONVERSATION_MESSAGES = 8;
@@ -65,9 +62,13 @@ export const DELETE_BATCH_SIZE = 64;
 export const HUMAN_IDLE_TOO_LONG = 5 * 60 * 1000;
 
 export const ACTIVITIES = [
-  { description: 'reading a book', emoji: '📖', duration: 60_000 },
-  { description: 'daydreaming', emoji: '🤔', duration: 60_000 },
-  { description: 'gardening', emoji: '🥕', duration: 60_000 },
+  { description: 'reading a book', emoji: '📖', duration: 30_000 },
+  { description: 'daydreaming', emoji: '🤔', duration: 30_000 },
+  { description: 'gardening', emoji: '🥕', duration: 30_000 },
+  { description: 'enjoying the view', emoji: '🌄', duration: 20_000 },
+  { description: 'stretching', emoji: '🧘', duration: 20_000 },
+  { description: 'chatting nearby', emoji: '💬', duration: 20_000 },
+  { description: 'looking around', emoji: '👀', duration: 15_000 },
 ];
 
 export const ENGINE_ACTION_DURATION = 30000;

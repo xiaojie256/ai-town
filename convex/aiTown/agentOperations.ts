@@ -69,13 +69,21 @@ export const agentGenerateMessage = internalAction({
       default:
         assertNever(args.type);
     }
-    const text = await completionFn(
-      ctx,
-      args.worldId,
-      args.conversationId as GameId<'conversations'>,
-      args.playerId as GameId<'players'>,
-      args.otherPlayerId as GameId<'players'>,
-    );
+    let text: string;
+    try {
+      text = await completionFn(
+        ctx,
+        args.worldId,
+        args.conversationId as GameId<'conversations'>,
+        args.playerId as GameId<'players'>,
+        args.otherPlayerId as GameId<'players'>,
+      );
+    } catch (e: any) {
+      console.error(`agentGenerateMessage failed (${args.type}):`, e?.message ?? e);
+      // Still clear the operation so the agent doesn't get permanently stuck.
+      // Use a short placeholder so the conversation can continue or leave gracefully.
+      text = args.type === 'leave' ? 'Goodbye.' : '...';
+    }
 
     await ctx.runMutation(internal.aiTown.agent.agentSendMessage, {
       worldId: args.worldId,
