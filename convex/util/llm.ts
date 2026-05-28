@@ -91,13 +91,15 @@ export async function chatCompletion(
   body.model = body.model ?? config.chatModel;
   const stopWords = body.stop ? (typeof body.stop === 'string' ? [body.stop] : body.stop) : [];
   if (config.stopWords) stopWords.push(...config.stopWords);
+  // Apply merged stop words back (limit to 4 for API compatibility), or omit if empty
+  body.stop = stopWords.length > 0 ? stopWords.slice(0, 4) : undefined;
   const {
     result: content,
     retries,
     ms,
   } = await retryWithBackoff(async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     const result = await fetch(config.url + '/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -109,10 +111,7 @@ export async function chatCompletion(
     }).finally(() => clearTimeout(timeoutId));
     if (!result.ok) {
       const error = await result.text();
-      console.error({ error });
-      if (result.status === 404 && config.provider === 'ollama') {
-        await tryPullOllama(body.model!, error);
-      }
+      console.error(`Chat completion failed [${result.status}]:`, error);
       throw {
         retry: result.status === 429 || result.status >= 500,
         error: new Error(`Chat completion failed with code ${result.status}: ${error}`),
