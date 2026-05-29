@@ -59,12 +59,14 @@ export function getLLMConfig(): LLMConfig {
   );
 }
 
-const AuthHeaders = (): Record<string, string> =>
-  getLLMConfig().apiKey
-    ? {
-        Authorization: 'Bearer ' + getLLMConfig().apiKey,
-      }
-    : {};
+const AuthHeaders = (): Record<string, string> => {
+  const apiKey = getLLMConfig().apiKey;
+  if (!apiKey) return {};
+  return {
+    Authorization: 'Bearer ' + apiKey,
+    'api-key': apiKey,
+  };
+};
 
 // Overload for non-streaming
 export async function chatCompletion(
@@ -100,7 +102,8 @@ export async function chatCompletion(
   } = await retryWithBackoff(async () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-    const result = await fetch(config.url + '/v1/chat/completions', {
+    const baseUrl = config.url.endsWith('/v1') ? config.url : config.url + '/v1';
+    const result = await fetch(baseUrl + '/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
